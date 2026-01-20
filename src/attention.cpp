@@ -36,9 +36,11 @@ NodeID AttentionHead::forward(Graph& g, NodeID x_id)
     NodeID scores = g.matmul(q, k_t);
 
     // 3. scaling : we need to divide by sqrt(d_k)
-
-    NodeID scale_tensor = g.value(Tensor(1,1,1.0 /std::sqrt(static_cast<float>(d_k))));
-    NodeID scaled_scores = g.mul(scores , scale_tensor);
+    // Get the shape from scores tensor to create matching scale tensor
+    const Tensor& scores_data = g.arena[scores].data;
+    double scale_val = 1.0 / std::sqrt(static_cast<double>(d_k));
+    NodeID scale_tensor = g.value(Tensor(scores_data.rows, scores_data.cols, scale_val));
+    NodeID scaled_scores = g.mul(scores, scale_tensor);
 
     // 4. Softmax: get the weights
     NodeID attn_weights = g.softmax(scaled_scores);

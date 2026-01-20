@@ -32,6 +32,7 @@ add_library(autograd STATIC
     src/layers.cpp
     src/init.cpp
     src/attention.cpp
+    src/transformer_block.cpp
 )
 
 # Link math library if needed (for some systems)

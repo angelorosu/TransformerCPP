@@ -1,6 +1,6 @@
 #pragma once
 #include "graph.hpp"
-
+#include <unordered_map>
 //
 class Optimizer
 {
@@ -31,6 +31,7 @@ public:
     double beta1 = 0.9; // decay for mean (momentum)
     double beta2; // decay for variance (scaling)
     double eps = 1e-8; 
+    double max_grad_norm = 1.0;  // gradient clipping threshold
     int t = 0;  //time step
 
     //memory tensor Key: NodeID, Value

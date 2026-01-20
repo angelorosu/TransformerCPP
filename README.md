@@ -66,12 +66,13 @@ Input → [Multi-Head Attention] → [Add & Norm] → [FFN] → [Add & Norm] →
 | **Tensor** | N-dimensional arrays with matmul, add, transpose, concat |
 | **Graph** | Computation graph that tracks operations |
 | **Autograd** | Reverse-mode automatic differentiation |
-| **Optimizers** | SGD, Adam with momentum & bias correction |
-| **Layers** | Linear (fully connected) |
+| **Optimizers** | SGD, Adam with momentum, bias correction & gradient clipping |
+| **Layers** | Linear (fully connected), Encoder Block |
 | **Attention** | Single-head & Multi-head attention |
 | **Activations** | ReLU, Tanh, Sigmoid, Softmax (row-wise), LayerNorm |
 | **Loss** | MSE, Cross-Entropy |
 | **Init** | Xavier, Kaiming |
+| **Positional** | Sinusoidal positional encoding |
 
 ## Quick Start
 
@@ -147,6 +148,17 @@ Num heads: 4
 Epoch 0 | Loss: 0.00915111
 Epoch 40 | Loss: 0.00146473
 ✓ Attention is learning!
+
+=== TEST: Encoder Block ===
+Input shape: (4, 32)
+Output shape: (4, 32)
+✓ Encoder block test complete!
+
+=== TEST: Encoder Learns to Predict Next Number ===
+Task: [1,2,3,4] → [2,3,4,5] (predict next number)
+Epoch 0 | Loss: 0.168993
+Epoch 150 | Loss: 0.0479694
+✓ Encoder is learning!
 ```
 
 ## How Attention Works
@@ -177,6 +189,8 @@ TransformerCPP/
 │   ├── optimizer.hpp   # SGD, Adam
 │   ├── layers.hpp      # Linear layer
 │   ├── attention.hpp   # AttentionHead, MultiHeadAttention
+│   ├── transformer_block.hpp  # EncoderBlock
+│   ├── positional_encoding.hpp  # Sinusoidal PE
 │   ├── loss.hpp        # Loss functions
 │   └── init.hpp        # Weight initialization
 ├── src/
@@ -185,6 +199,7 @@ TransformerCPP/
 │   ├── optimizer.cpp
 │   ├── layers.cpp
 │   ├── attention.cpp
+│   ├── transformer_block.cpp
 │   ├── init.cpp
 │   └── main.cpp
 ├── examples/
@@ -207,14 +222,16 @@ TransformerCPP/
 
 - [x] Core tensor operations
 - [x] Reverse-mode autodiff
-- [x] SGD & Adam optimizers
+- [x] SGD & Adam optimizers (with gradient clipping)
 - [x] Linear layer
 - [x] Activation functions (row-wise softmax)
 - [x] Single Attention Head
 - [x] Multi-Head Attention
 - [x] Concat operation
-- [ ] Positional Encoding
-- [ ] Transformer Block (MHA + FFN + LayerNorm + Residuals)
+- [x] Positional Encoding (sinusoidal)
+- [x] Transformer Encoder Block (Pre-LN architecture)
+- [ ] Stack N encoder blocks
+- [ ] Decoder block with causal masking
 - [ ] Thread pool for parallel heads
 - [ ] Full Transformer encoder/decoder
 - [ ] GPU support (CUDA)

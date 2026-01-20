@@ -31,6 +31,24 @@ void Adam::step(Graph& g)
     const double bias_correction1 = 1.0 - std::pow(beta1, t);
     const double bias_correction2 = 1.0 - std::pow(beta2, t);
     
+    // Gradient clipping: compute global norm first
+    double global_norm_sq = 0.0;
+    for (std::size_t i = 0; i < g.arena.size(); ++i) {
+        if (!g.arena[i].is_parameter) continue;
+        for (double val : g.arena[i].grad.data) {
+            if (std::isfinite(val)) {
+                global_norm_sq += val * val;
+            }
+        }
+    }
+    double global_norm = std::sqrt(global_norm_sq);
+    
+    // Clip gradients if norm exceeds max_grad_norm
+    double clip_coef = 1.0;
+    if (global_norm > max_grad_norm) {
+        clip_coef = max_grad_norm / global_norm;
+    }
+    
     for (std::size_t i = 0; i < g.arena.size(); ++i) {
         if (!g.arena[i].is_parameter) continue;
         
@@ -44,11 +62,17 @@ void Adam::step(Graph& g)
         Tensor& grad = g.arena[i].grad;
         
         for (std::size_t j = 0; j < data.data.size(); ++j) {
+            // Skip NaN/inf gradients entirely
+            if (!std::isfinite(grad.data[j])) continue;
+            
+            // Apply clipping to gradient
+            double clipped_grad = grad.data[j] * clip_coef;
+            
             // m_t = beta1 * m_{t-1} + (1 - beta1) * g_t
-            m[i].data[j] = beta1 * m[i].data[j] + (1.0 - beta1) * grad.data[j];
+            m[i].data[j] = beta1 * m[i].data[j] + (1.0 - beta1) * clipped_grad;
             
             // v_t = beta2 * v_{t-1} + (1 - beta2) * g_t^2
-            v[i].data[j] = beta2 * v[i].data[j] + (1.0 - beta2) * grad.data[j] * grad.data[j];
+            v[i].data[j] = beta2 * v[i].data[j] + (1.0 - beta2) * clipped_grad * clipped_grad;
             
             // Bias corrected estimates
             double m_hat = m[i].data[j] / bias_correction1;
