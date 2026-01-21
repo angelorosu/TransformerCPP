@@ -11,6 +11,9 @@
 
 NodeID Graph::value(const Tensor& t)
 {
+#ifdef ENABLE_THREADING //only used if needed for threading if not ignore 
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
     Node n;
     n.data = t;
     n.grad = Tensor::zeros_like(t);    
@@ -20,6 +23,9 @@ NodeID Graph::value(const Tensor& t)
 
 NodeID Graph::parameter(const Tensor& t)
 {
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
     Node n;
     n.data = t;
     n.grad = Tensor::zeros_like(t);
@@ -35,7 +41,10 @@ NodeID Graph::add(NodeID a_id, NodeID b_id)
 {
     //const Tensor& a = arena[a_id].data; 
     //const Tensor& b = arena[b_id].data; this was the way i done it before but it can cause referencing invalidation in case whole arena moves to new loc to make it bigger
-    
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
+
     Tensor result = Tensor::add(arena[a_id].data, arena[b_id].data);
 
     Node out;
@@ -55,7 +64,10 @@ NodeID Graph::matmul(NodeID a_id, NodeID b_id)
 {
     //const Tensor& a = arena[a_id].data;
     //const Tensor& b = arena[b_id].data;
-    
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
+
     Tensor result = Tensor::matmul(arena[a_id].data, arena[b_id].data);
 
     Node out;
@@ -77,6 +89,10 @@ NodeID Graph::mul(NodeID a_id, NodeID b_id)
 {
 //    const Tensor& a = arena[a_id].data;
 //    const Tensor& b = arena[b_id].data;
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
+
     Tensor result = Tensor::elemwise_mul(arena[a_id].data, arena[b_id].data);
     Node out;
     out.data = result ;
@@ -93,9 +109,13 @@ NodeID Graph::mul(NodeID a_id, NodeID b_id)
 
 NodeID Graph::div(NodeID a_id, NodeID b_id)
 {
+    
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif  
+
     const Tensor& a = arena[a_id].data;
     const Tensor& b = arena[b_id].data;
-
     Node out;
     out.data = Tensor::elemwise_div(a,b);
     out.grad = Tensor::zeros_like(out.data);
@@ -111,9 +131,13 @@ NodeID Graph::div(NodeID a_id, NodeID b_id)
 
 
 NodeID Graph::relu(NodeID a_id)
-{
-    const Tensor& a = arena[a_id].data;
 
+{   
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
+    const Tensor& a = arena[a_id].data;
+    
 
     Node out;
     out.data = Tensor::relu(a);
@@ -129,7 +153,10 @@ NodeID Graph::relu(NodeID a_id)
 }
 
 NodeID Graph::tanh(NodeID a_id)
-{
+{   
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
     const Tensor& a = arena[a_id].data;
     
 
@@ -150,6 +177,9 @@ NodeID Graph::tanh(NodeID a_id)
 
 NodeID Graph::sigmoid(NodeID a_id)
 {
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
     const Tensor& a = arena[a_id].data;
     
 
@@ -169,6 +199,9 @@ NodeID Graph::sigmoid(NodeID a_id)
 
 NodeID Graph::softmax(NodeID a_id)
 {
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
     const Tensor& a = arena[a_id].data;
 
     Node out;
@@ -187,6 +220,9 @@ NodeID Graph::softmax(NodeID a_id)
 
 NodeID Graph::layer_norm(NodeID a_id)
 {
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
     const Tensor& a = arena[a_id].data;
 
     Node out;
@@ -204,6 +240,10 @@ NodeID Graph::layer_norm(NodeID a_id)
 
 NodeID Graph::log(NodeID a_id)
 {
+    
+  #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
   Tensor result = Tensor::elemwise_log(arena[a_id].data);
 
   Node out;
@@ -221,6 +261,9 @@ NodeID Graph::log(NodeID a_id)
 
 NodeID Graph::transpose(NodeID a_id)
 {
+  #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
   Tensor result = Tensor::transpose(arena[a_id].data);
 
   Node out;
@@ -241,6 +284,9 @@ NodeID Graph::concat(const std::vector<NodeID>& inputs)
     // concating on axis 1 columns 
 
     // validate all inputs have same rows
+    #ifdef ENABLE_THREADING
+    std::lock_guard<std::mutex> lock(arena_mutex);
+#endif
     std::size_t rows = arena[inputs[0]].data.rows;
     std::size_t total_cols = 0;
 

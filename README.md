@@ -7,20 +7,22 @@ A Transformer neural network built from scratch in C++17, with custom autograd e
   <img src="https://img.shields.io/badge/C++-17-blue.svg" alt="C++17">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT">
   <img src="https://img.shields.io/badge/Build-CMake-red.svg" alt="CMake">
+  <img src="https://img.shields.io/badge/Threading-Optional-orange.svg" alt="Threading">
 </p>
 
 ## What is This?
 
 A from-scratch implementation of the Transformer architecture ("Attention Is All You Need", 2017) including:
 - Custom automatic differentiation engine
-- Tensor operations with backpropagation
+- Tensor operations with backpropagation  
 - Attention mechanism with learnable Q, K, V projections
+- Optional multi-threading for parallel attention heads
 
 ```
 Input → [Multi-Head Attention] → [Add & Norm] → [FFN] → [Add & Norm] → Output
               ↓
         ┌─────┴─────┐
-        │  N Heads  │
+        │  N Heads  │  ← Parallel execution (optional)
         │  Q, K, V  │
         │  Softmax  │
         └───────────┘
@@ -64,15 +66,16 @@ Input → [Multi-Head Attention] → [Add & Norm] → [FFN] → [Add & Norm] →
 | Component | Description |
 |-----------|-------------|
 | **Tensor** | N-dimensional arrays with matmul, add, transpose, concat |
-| **Graph** | Computation graph that tracks operations |
+| **Graph** | Computation graph with optional thread-safe arena |
 | **Autograd** | Reverse-mode automatic differentiation |
 | **Optimizers** | SGD, Adam with momentum, bias correction & gradient clipping |
 | **Layers** | Linear (fully connected), Encoder Block |
-| **Attention** | Single-head & Multi-head attention |
+| **Attention** | Single-head & Multi-head attention (parallel when threading enabled) |
 | **Activations** | ReLU, Tanh, Sigmoid, Softmax (row-wise), LayerNorm |
 | **Loss** | MSE, Cross-Entropy |
 | **Init** | Xavier, Kaiming |
 | **Positional** | Sinusoidal positional encoding |
+| **Threading** | Optional `std::thread` parallelism via CMake flag |
 
 ## Quick Start
 
@@ -118,10 +121,21 @@ cmake ..
 make
 ```
 
+### Enable Threading (Optional)
+
+For parallel multi-head attention execution:
+
+```bash
+cmake -DENABLE_THREADING=ON ..
+make
+```
+
+This enables `std::thread`-based parallelism with mutex-protected graph operations.
+
 ## Run
 
 ```bash
-./transformer_main    # Runs all tests
+./transformer_main    # Encoder tests & validation
 ./xor_example         # Classic XOR problem
 ```
 
@@ -183,16 +197,17 @@ Epoch 150 | Loss: 0.0479694
 ```
 TransformerCPP/
 ├── include/
-│   ├── tensor.hpp      # Tensor class
-│   ├── node.hpp        # Node & Op enum
-│   ├── graph.hpp       # Computation graph
-│   ├── optimizer.hpp   # SGD, Adam
-│   ├── layers.hpp      # Linear layer
-│   ├── attention.hpp   # AttentionHead, MultiHeadAttention
-│   ├── transformer_block.hpp  # EncoderBlock
-│   ├── positional_encoding.hpp  # Sinusoidal PE
-│   ├── loss.hpp        # Loss functions
-│   └── init.hpp        # Weight initialization
+│   ├── tensor.hpp          # Tensor class
+│   ├── node.hpp            # Node & Op enum
+│   ├── graph.hpp           # Computation graph (thread-safe optional)
+│   ├── optimizer.hpp       # SGD, Adam (with gradient clipping)
+│   ├── layers.hpp          # Linear layer
+│   ├── attention.hpp       # AttentionHead, MultiHeadAttention
+│   ├── transformer_block.hpp   # EncoderBlock (Pre-LN)
+│   ├── positional_encoding.hpp # Sinusoidal PE
+│   ├── threading.hpp       # parallel_for helper
+│   ├── loss.hpp            # Loss functions
+│   └── init.hpp            # Weight initialization
 ├── src/
 │   ├── tensor.cpp
 │   ├── graph.cpp

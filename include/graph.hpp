@@ -2,11 +2,20 @@
 #include <vector>
 #include <cstddef>
 #include <cstdint>
+#ifdef ENABLE_THREADING
+#include <mutex>
+#endif
 #include "node.hpp"
 
 struct Graph
 {
     std::vector<Node> arena;
+#ifdef ENABLE_THREADING
+    std::mutex arena_mutex; // locks arena access for thread safety
+#endif
+    // works a bit like a flag
+    //TODO: later on we need different approach if tryingto achieve PyTorch style and not have an arena to keep track 
+
 
     NodeID value(const Tensor& t);
     NodeID parameter(const Tensor& t);

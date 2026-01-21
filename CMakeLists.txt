@@ -21,6 +21,15 @@ endif()
 # Add debug symbols even in release for profiling
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -g")
 
+# Threading support (optional)
+option(ENABLE_THREADING "Enable thread-safe graph operations" OFF)
+if(ENABLE_THREADING)
+    add_compile_definitions(ENABLE_THREADING)
+message(STATUS "Threading: ENABLED")
+else()
+    message(STATUS "Threading: DISABLED")
+endif()
+
 # Include directories
 include_directories(${PROJECT_SOURCE_DIR}/include)
 

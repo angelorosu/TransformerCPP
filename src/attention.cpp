@@ -1,6 +1,10 @@
 #include "attention.hpp"
 #include "init.hpp"
 
+#ifdef ENABLE_THREADING
+#include "threading.hpp"
+#endif
+
 // Constructor
 AttentionHead::AttentionHead(Graph& g, int in_dim, int k_dim, int v_dim)
     : d_in(in_dim), d_k(k_dim), d_v(v_dim)
@@ -76,12 +80,26 @@ MultiHeadAttention::MultiHeadAttention(Graph& g, int d_model_ , int num_heads_)
 
 NodeID MultiHeadAttention::forward(Graph& g, NodeID x_id)
 {
-    // run all heads
-    std::vector<NodeID> head_outputs;
-    for (auto& head: heads)
+    //pre-allocate
+    std::vector<NodeID> head_outputs(heads.size());
+
+#ifdef ENABLE_THREADING
+// parallel : run all headds concurently
+    threading::parallel_for(heads.size(), [&](std::size_t i)
     {
-        head_outputs.push_back(head.forward(g,x_id));
-    }
+        head_outputs[i] = heads[i].forward(g,x_id);
+    });
+  
+#else
+//run sequentially
+    for (std::size_t i =0; i < heads.size(); ++i)
+        {
+            head_outputs[i] = heads[i].forward(g, x_id);
+        }
+
+#endif
+
+    
 
     //concat all heads
     NodeID concat = g.concat(head_outputs);
